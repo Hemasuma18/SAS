@@ -2,6 +2,7 @@ const XLSX = require('xlsx');
 const pdfParse = require('pdf-parse');
 const Student = require('../models/Student');
 const logger = require('../utils/logger');
+const { ensureStudentAccount } = require('../utils/studentAccount');
 
 // ─── Field normalisation map ──────────────────────────────────────────────────
 // Maps common header variants (lowercase, trimmed) → canonical field name
@@ -223,6 +224,7 @@ const confirmImport = async (req, res, next) => {
 
     // Insert — ordered:false so one failure doesn't abort the batch
     const inserted = await Student.insertMany(toInsert, { ordered: false });
+    await Promise.all(inserted.map(ensureStudentAccount));
 
     logger.info(`Import confirmed by ${req.user.name}: ${inserted.length} students inserted`);
 

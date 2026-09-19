@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import {
   HomeIcon, UserGroupIcon, BookOpenIcon,
   ClipboardDocumentCheckIcon, ChartBarIcon,
-  DocumentChartBarIcon, UsersIcon, TableCellsIcon, CalculatorIcon, ArrowUpTrayIcon,
+  DocumentChartBarIcon, UsersIcon, TableCellsIcon, CalculatorIcon, ArrowUpTrayIcon, AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 
 const navItems = [
+  { to: '/my-attendance',    label: 'My Attendance',   icon: AcademicCapIcon,                roles: ['student'] },
   { to: '/',                label: 'Dashboard',      icon: HomeIcon,                      roles: ['admin', 'teacher', 'hod', 'student_cr'] },
   { to: '/timetable',       label: 'Timetable',      icon: TableCellsIcon,                roles: ['admin', 'teacher', 'hod', 'student_cr'] },
   { to: '/students',        label: 'Students',       icon: UserGroupIcon,                 roles: ['admin', 'hod'] },

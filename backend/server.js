@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const logger = require('./utils/logger');
+const { syncStudentAccounts } = require('./utils/studentAccount');
+const User = require('./models/User');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -13,8 +15,6 @@ const subjectRoutes = require('./routes/subjectRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const timetableRoutes = require('./routes/timetableRoutes');
 const importRoutes    = require('./routes/importRoutes');
-
-connectDB();
 
 const app = express();
 
@@ -50,6 +50,18 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`));
+
+const startServer = async () => {
+  await connectDB();
+  await User.syncIndexes();
+  const syncedAccounts = await syncStudentAccounts();
+  logger.info(`Student account sync complete: ${syncedAccounts} active students checked`);
+  app.listen(PORT, () => logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`));
+};
+
+startServer().catch((error) => {
+  logger.error(`Server startup error: ${error.message}`);
+  process.exit(1);
+});
 
 module.exports = app;

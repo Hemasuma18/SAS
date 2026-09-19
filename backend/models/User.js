@@ -6,9 +6,10 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6 },
-    role: { type: String, enum: ['admin', 'teacher', 'hod', 'student_cr'], default: 'teacher' },
+    role: { type: String, enum: ['admin', 'teacher', 'hod', 'student_cr', 'student'], default: 'teacher' },
     department: { type: String, trim: true },
     rollNumber: { type: String, trim: true, sparse: true }, // for CR students
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', unique: true, sparse: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

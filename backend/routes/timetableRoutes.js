@@ -4,9 +4,9 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/sections', protect, getSections);
-router.get('/', protect, getTimetable);
-router.get('/grouped', protect, getTimetableGrouped);
+router.get('/sections', protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getSections);
+router.get('/', protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getTimetable);
+router.get('/grouped', protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getTimetableGrouped);
 router.put('/', protect, authorize('admin'), upsertSlot);
 router.delete('/:id', protect, authorize('admin'), deleteSlot);
 

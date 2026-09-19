@@ -8,19 +8,19 @@ import toast from 'react-hot-toast';
 export default function Login() {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
-  const [loginMode, setLoginMode] = useState('email'); // 'email' | 'roll'
+  const [loginMode, setLoginMode] = useState('email'); // 'email' | 'roll' | 'student'
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   const onSubmit = async (data) => {
     const payload =
-      loginMode === 'roll'
+      loginMode !== 'email'
         ? { rollNumber: data.rollNumber, password: data.password }
         : { email: data.email, password: data.password };
 
     const result = await login(payload);
     if (result.success) {
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(result.role === 'student' ? '/my-attendance' : '/');
     } else {
       toast.error(result.message);
     }
@@ -59,6 +59,13 @@ export default function Login() {
             >
               CR Login
             </button>
+            <button
+              type="button"
+              onClick={() => switchMode('student')}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${loginMode === 'student' ? 'bg-white shadow text-purple-700' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Student Login
+            </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -81,7 +88,7 @@ export default function Login() {
                 <label className="label">Roll Number</label>
                 <input
                   className="input"
-                  placeholder="e.g. 23K61A0606"
+                  placeholder={loginMode === 'student' ? 'Registration / roll number' : 'e.g. 23K61A0606'}
                   {...register('rollNumber', { required: 'Roll number is required' })}
                 />
                 {errors.rollNumber && <p className="error-text">{errors.rollNumber.message}</p>}

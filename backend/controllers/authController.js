@@ -2,6 +2,8 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const logger = require('../utils/logger');
+const Student = require('../models/Student');
+const { ensureStudentAccount } = require('../utils/studentAccount');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -44,17 +46,29 @@ const login = async (req, res, next) => {
 
     const { email, rollNumber, password } = req.body;
 
-    // CR login via roll number, everyone else via email
-    const query = rollNumber ? { rollNumber: rollNumber.trim().toUpperCase() } : { email };
-    const user = await User.findOne(query);
+    let user;
+    if (rollNumber) {
+      const normalizedRollNumber = rollNumber.trim().toUpperCase();
+      const student = await Student.findOne({ rollNumber: normalizedRollNumber, isActive: true });
+      if (student) await ensureStudentAccount(student);
 
-    if (!user || !(await user.matchPassword(password))) {
+      const candidates = await User.find({ rollNumber: normalizedRollNumber });
+      for (const candidate of candidates) {
+        if (await candidate.matchPassword(password)) {
+          user = candidate;
+          break;
+        }
+      }
+    } else {
+      user = await User.findOne({ email });
+    }
+
+    if (!user || (!rollNumber && !(await user.matchPassword(password)))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     if (!user.isActive) return res.status(401).json({ message: 'Account is deactivated' });
 
-    // Block regular students — only faculty, admin, hod, student_cr allowed
-    const allowedRoles = ['admin', 'teacher', 'hod', 'student_cr'];
+    const allowedRoles = ['admin', 'teacher', 'hod', 'student_cr', 'student'];
     if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({ message: 'Access denied. Only faculty and CRs can log in.' });
     }

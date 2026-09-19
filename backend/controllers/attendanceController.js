@@ -17,6 +17,8 @@ const parseUTCDate = (dateStr) => {
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+const getTodayUTC = () => parseUTCDate(new Date().toISOString().slice(0, 10));
+
 // ─── Mark Attendance ──────────────────────────────────────────────────────────
 
 // @desc    Mark attendance (bulk)
@@ -218,6 +220,40 @@ const getAttendanceByStudent = async (req, res, next) => {
   }
 };
 
+// @desc    Get the authenticated student's attendance summary
+// @route   GET /api/attendance/my
+// @access  Student
+const getMyAttendance = async (req, res, next) => {
+  try {
+    const student = await Student.findOne({ _id: req.user.studentId, isActive: true })
+      .select('name rollNumber');
+    if (!student) return res.status(404).json({ message: 'Student record not found' });
+
+    const today = getTodayUTC();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const records = await Attendance.find({
+      studentId: student._id,
+      // Attendance is cumulative from the student's first recorded class through today.
+      date: { $lt: tomorrow },
+    }).select('status date');
+
+    const present = records.filter((record) => record.status === 'Present').length;
+    const totalClasses = records.length;
+    const attendancePercentage = totalClasses === 0 ? 0 : Math.round((present / totalClasses) * 10000) / 100;
+
+    res.json({
+      student,
+      present,
+      absent: totalClasses - present,
+      totalClasses,
+      attendancePercentage,
+      belowThreshold: attendancePercentage < 75,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── Get Report ───────────────────────────────────────────────────────────────
 
 // @desc    Get attendance report with stats
@@ -253,8 +289,11 @@ const getReport = async (req, res, next) => {
         const parts = String(month).split('-');
         if (parts.length !== 2) return res.status(400).json({ message: 'Invalid month format. Use YYYY-MM' });
         const [y, m] = parts.map(Number);
-        matchFilter.date.$gte = new Date(Date.UTC(y, m - 1, 1));
-        matchFilter.date.$lt  = new Date(Date.UTC(y, m, 1));
+        const monthStart = new Date(Date.UTC(y, m - 1, 1));
+        const monthEnd = new Date(Date.UTC(y, m, 1));
+        const tomorrow = new Date(getTodayUTC().getTime() + 24 * 60 * 60 * 1000);
+        matchFilter.date.$gte = monthStart;
+        matchFilter.date.$lt = monthEnd < tomorrow ? monthEnd : tomorrow;
       } else {
         if (startDate) {
           const d = parseUTCDate(startDate);
@@ -265,6 +304,13 @@ const getReport = async (req, res, next) => {
           const d = parseUTCDate(endDate);
           if (!d) return res.status(400).json({ message: 'Invalid endDate' });
           matchFilter.date.$lte = new Date(d.getTime() + 24 * 60 * 60 * 1000 - 1);
+        }
+
+        const today = getTodayUTC();
+        const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+        if (!matchFilter.date.$lte || matchFilter.date.$lte >= tomorrow) {
+          matchFilter.date.$lt = tomorrow;
+          delete matchFilter.date.$lte;
         }
       }
     }
@@ -463,6 +509,7 @@ module.exports = {
   markAttendance,
   getAttendanceByDate,
   getAttendanceByStudent,
+  getMyAttendance,
   getReport,
   getDashboardStats,
   checkAttendance,

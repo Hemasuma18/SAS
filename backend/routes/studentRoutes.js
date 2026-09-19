@@ -15,15 +15,15 @@ const studentValidation = [
   body('section').trim().notEmpty().withMessage('Section is required'),
 ];
 
-router.get('/departments', protect, getDepartments);
-router.get('/sections', protect, getSections);
+router.get('/departments', protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getDepartments);
+router.get('/sections', protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getSections);
 
 router.route('/')
-  .get(protect, getStudents)
+  .get(protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getStudents)
   .post(protect, authorize('admin'), studentValidation, createStudent);
 
 router.route('/:id')
-  .get(protect, getStudent)
+  .get(protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getStudent)
   .put(protect, authorize('admin'), updateStudent)
   .delete(protect, authorize('admin'), deleteStudent);
 

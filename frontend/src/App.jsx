@@ -15,6 +15,7 @@ import Reports from './pages/Reports';
 import Timetable from './pages/Timetable';
 import AttendanceCalculator from './pages/AttendanceCalculator';
 import StudentImport from './pages/StudentImport';
+import MyAttendance from './pages/MyAttendance';
 
 function ProtectedLayout() {
   const { user } = useAuth();
@@ -43,7 +44,7 @@ function RoleGuard({ roles, children }) {
 
 function PublicRoute({ children }) {
   const { user } = useAuth();
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={user.role === 'student' ? '/my-attendance' : '/'} replace />;
   return children;
 }
 
@@ -52,8 +53,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route element={<ProtectedLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/timetable" element={<Timetable />} />
+        <Route path="/" element={<RoleGuard roles={['admin', 'teacher', 'hod', 'student_cr']}><Dashboard /></RoleGuard>} />
+        <Route path="/my-attendance" element={<RoleGuard roles={['student']}><MyAttendance /></RoleGuard>} />
+        <Route path="/timetable" element={<RoleGuard roles={['admin', 'teacher', 'hod', 'student_cr']}><Timetable /></RoleGuard>} />
         <Route path="/students" element={<RoleGuard roles={['admin', 'hod']}><Students /></RoleGuard>} />
         <Route path="/subjects" element={<RoleGuard roles={['admin', 'hod']}><Subjects /></RoleGuard>} />
         <Route path="/teachers" element={<RoleGuard roles={['admin']}><Teachers /></RoleGuard>} />

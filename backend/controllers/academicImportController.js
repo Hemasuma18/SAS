@@ -6,6 +6,7 @@ const Subject = require('../models/Subject');
 const Timetable = require('../models/Timetable');
 const Student = require('../models/Student');
 const logger = require('../utils/logger');
+const { ensureStudentAccount } = require('../utils/studentAccount');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -616,6 +617,7 @@ const confirmAcademicImport = async (req, res, next) => {
       if (toInsert.length > 0) {
         try {
           const inserted = await Student.insertMany(toInsert, { ordered: false });
+          await Promise.all(inserted.map(ensureStudentAccount));
           results.students = inserted.length;
         } catch (e) {
           results.students = e.insertedDocs?.length ?? 0;

@@ -3,6 +3,7 @@ const Student = require('../models/Student');
 const Subject = require('../models/Subject');
 const User = require('../models/User');
 const Timetable = require('../models/Timetable');
+const { ensureStudentAccount } = require('../utils/studentAccount');
 
 // @desc    Get all students with search, filter, pagination
 // @route   GET /api/students
@@ -58,6 +59,7 @@ const createStudent = async (req, res, next) => {
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const student = await Student.create(req.body);
+    await ensureStudentAccount(student);
     res.status(201).json(student);
   } catch (error) {
     next(error);

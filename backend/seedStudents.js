@@ -1,7 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Student = require('./models/Student');
+const User = require('./models/User');
 const connectDB = require('./config/db');
+const { ensureStudentAccount } = require('./utils/studentAccount');
 
 const students = [
   { name: 'Achuta Venkata Ramana',                  rollNumber: '23K61A0601' },
@@ -82,14 +84,20 @@ const students = [
 
 const seedStudents = async () => {
   await connectDB();
+  await User.syncIndexes();
 
   let inserted = 0;
   let skipped = 0;
 
   for (const s of students) {
     const exists = await Student.findOne({ rollNumber: s.rollNumber });
-    if (exists) { skipped++; continue; }
-    await Student.create(s);
+    if (exists) {
+      await ensureStudentAccount(exists);
+      skipped++;
+      continue;
+    }
+    const student = await Student.create(s);
+    await ensureStudentAccount(student);
     inserted++;
   }
 

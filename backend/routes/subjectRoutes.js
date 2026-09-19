@@ -16,11 +16,11 @@ const subjectValidation = [
 ];
 
 router.route('/')
-  .get(protect, getSubjects)
+  .get(protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getSubjects)
   .post(protect, authorize('admin'), subjectValidation, createSubject);
 
 router.route('/:id')
-  .get(protect, getSubject)
+  .get(protect, authorize('admin', 'teacher', 'hod', 'student_cr'), getSubject)
   .put(protect, authorize('admin'), updateSubject)
   .delete(protect, authorize('admin'), deleteSubject);
 
